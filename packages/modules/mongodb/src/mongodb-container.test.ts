@@ -61,4 +61,56 @@ describe("MongodbContainer", { timeout: 240_000 }, () => {
     await mongodbContainer.stop();
   });
   // }
+
+  it("uses custom credentials (Mongo4, old commands)", async () => {
+    const mongodbContainer = await new MongoDBContainer("mongo:4.0.1")
+      .withUsername("CustomUserName")
+      .withPassword("CustomPassword")
+      .start();
+
+    const db = mongoose.createConnection(mongodbContainer.getConnectionString(), { directConnection: true });
+
+    const fooCollection = db.collection("foo");
+    const obj = { value: 1 };
+
+    const session = await db.startSession();
+    await session.withTransaction(async () => {
+      await fooCollection.insertOne(obj);
+    });
+
+    expect(
+      await fooCollection.findOne({
+        value: 1,
+      })
+    ).toEqual(obj);
+
+    await mongoose.disconnect();
+    await mongodbContainer.stop();
+  });
+
+  it("uses custom credentials (Mongo8, new commands)", async () => {
+    const mongodbContainer = await new MongoDBContainer("mongo:8.0.8")
+      .withUsername("CustomUserName")
+      .withPassword("CustomPassword")
+      .start();
+
+    const db = mongoose.createConnection(mongodbContainer.getConnectionString(), { directConnection: true });
+
+    const fooCollection = db.collection("foo");
+    const obj = { value: 1 };
+
+    const session = await db.startSession();
+    await session.withTransaction(async () => {
+      await fooCollection.insertOne(obj);
+    });
+
+    expect(
+      await fooCollection.findOne({
+        value: 1,
+      })
+    ).toEqual(obj);
+
+    await mongoose.disconnect();
+    await mongodbContainer.stop();
+  });
 });
